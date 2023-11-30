@@ -1,0 +1,30 @@
+db.getCollection('instructor').aggregate(
+  [
+    {
+      $lookup: {
+        as: 'department_join',
+        from: 'department',
+        foreignField: 'department.dept_name',
+        localField: 'instructor.dept_name'
+      }
+    },
+    { $unwind: { path: '$department_join' } },
+    {
+      $lookup: {
+        as: 'classroom_join',
+        from: 'classroom',
+        foreignField: 'classroom.building',
+        localField:
+          'department_join.department.building'
+      }
+    },
+    { $unwind: { path: '$classroom_join' } },
+    {
+      $project: {
+        'instructor.name': 1,
+        'classroom_join.classroom.building': 1,
+        'classroom_join.classroom.room_number': 1
+      }
+    }
+  ],
+);

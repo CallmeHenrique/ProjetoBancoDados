@@ -1,0 +1,50 @@
+db.getCollection('student').aggregate(
+  [
+    {
+      $lookup: {
+        as: 'advisor_join',
+        from: 'advisor',
+        foreignField: 'advisor.s_id',
+        localField: 'student.id'
+      }
+    },
+    { $unwind: { path: '$advisor_join' } },
+    {
+      $lookup: {
+        as: 'instructor_join',
+        from: 'instructor',
+        foreignField: 'instructor.id',
+        localField: 'advisor_join.advisor.i_id'
+      }
+    },
+    { $unwind: { path: '$instructor_join' } },
+    {
+      $lookup: {
+        as: 'teaches_join',
+        from: 'teaches',
+        foreignField: 'teaches.id',
+        localField:
+          'instructor_join.instructor.id'
+      }
+    },
+    { $unwind: { path: '$teaches_join' } },
+    {
+      $lookup: {
+        as: 'course_join',
+        from: 'course',
+        foreignField: 'course.course_id',
+        localField:
+          'teaches_join.teaches.course_id'
+      }
+    },
+    { $unwind: { path: '$course_join' } },
+    {
+      $project: {
+        'student.id': 1,
+        'student.name': 1,
+        'instructor_join.instructor.id': 1,
+        'course_join.course.title': 1
+      }
+    }
+  ],
+);

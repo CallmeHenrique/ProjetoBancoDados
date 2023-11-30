@@ -1,0 +1,62 @@
+db.getCollection('department').aggregate(
+  [
+    {
+      $lookup: {
+        as: 'student_join',
+        from: 'student',
+        foreignField: 'student.dept_name',
+        localField: 'department.dept_name'
+      }
+    },
+    {
+      $lookup: {
+        as: 'instructor_join',
+        from: 'instructor',
+        foreignField: 'instructor.dept_name',
+        localField: 'department.dept_name'
+      }
+    },
+    {
+      $project: {
+        'department.dept_name': 1,
+        'department.budget': 1,
+        'student_join.student.id': 1,
+        'instructor_join.instructor.salary': 1
+      }
+    },
+    {
+      $group: {
+        _id: '$department.dept_name',
+        dept_name: {
+          $first: '$department.dept_name'
+        },
+        budget: { $first: '$department.budget' },
+        studentCount: {
+          $sum: {
+            $cond: {
+              if: {
+                $isArray:
+                  '$student_join.student.id'
+              },
+              then: { $size: '$student_join' },
+              else: 0
+            }
+          }
+        },
+        avgInstructorSalary: {
+          $avg: {
+            $cond: {
+              if: {
+                $isArray: '$instructor_join'
+              },
+              then: {
+                $avg: '$instructor_join.instructor.salary'
+              },
+              else: 0
+            }
+          }
+        }
+      }
+    }
+  ],
+);
